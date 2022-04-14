@@ -1,6 +1,11 @@
 //
 // Created by ByteFlow on 2019/7/16.
 //
+/**
+ * 它的作用是读取shader处理后的vertex数据而和fragment无关。
+ * 如果有geometry shader那么读取的vertex就是geometry输出的结果；如果没有就是vertex shader输出的结果。
+ * 由于和fragment没有关系，为了节约不必要的计算步骤，我们使用glEnable(GL_RASTERIZER_DISCARD);来取消栅格化及之后的pipeline
+ */
 
 #include <GLUtils.h>
 #include "TransformFeedbackSample.h"
@@ -68,9 +73,9 @@ void TransformFeedbackSample::Init()
 			"void main()                                \n"
 			"{                                          \n"
 			"   gl_Position = a_position;               \n"
-			"   v_texCoord = a_texCoord;                \n"
-			"   outPos = vec3(a_position)*3.0;          \n"
-			"   outTex = a_texCoord * 3.0;              \n"
+			"   v_texCoord = a_texCoord;       //输出到片元着色器         \n"
+			"   outPos = vec3(a_position)*3.0; //输出到 TransformFeedback        \n"
+			"   outTex = a_texCoord * 3.0;     //输出到 TransformFeedback          \n"
 			"}                                          \n";
 
 	// 片段着色器脚本，简单纹理映射
@@ -127,6 +132,7 @@ void TransformFeedbackSample::Init()
 
 	glGenBuffers(1, &m_TransFeedbackBufId);
 	glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, m_TransFeedbackBufId);
+	// 设置缓存的大小，输出是一个 3 维向量和一个 2 维向量，一共 6 个顶点，大小为 (3 + 2) * 6 * sizeof(GLfloat)
 	glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, (3 + 2) * 6 * sizeof(GLfloat), NULL, GL_STATIC_READ);
 	glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
 

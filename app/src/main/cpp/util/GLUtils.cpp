@@ -104,7 +104,7 @@ GLuint GLUtils::CreateProgramWithFeedback(const char *pVertexShaderSource, const
             glAttachShader(program, fragShaderHandle);
             CheckGLError("glAttachShader");
 
-            //transform feedback
+            //transform feedback，设置图元着色器的哪些输出varying到feedback，link之前设置
             glTransformFeedbackVaryings(program, varyingCount, varying, GL_INTERLEAVED_ATTRIBS);
             GO_CHECK_GL_ERROR();
 

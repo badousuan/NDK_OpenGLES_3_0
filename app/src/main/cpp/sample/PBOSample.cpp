@@ -217,8 +217,9 @@ void PBOSample::Init()
 	glBindTexture(GL_TEXTURE_2D, GL_NONE);
 	GO_CHECK_GL_ERROR();
 
-	//初始化 FBO
-    glGenBuffers(2, m_UploadPboIds);
+	//初始化 FBO https://zhuanlan.zhihu.com/p/115257287
+	// https://www.khronos.org/opengl/wiki/Pixel_Buffer_Object
+    glGenBuffers(2, m_UploadPboIds); // 创建2个PBO,可以写入数据，乒乓操作
     int imgByteSize = m_RenderImage.width * m_RenderImage.height * 4;//RGBA
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_UploadPboIds[0]);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, imgByteSize, 0, GL_STREAM_DRAW);
@@ -226,7 +227,7 @@ void PBOSample::Init()
     glBufferData(GL_PIXEL_UNPACK_BUFFER, imgByteSize, 0, GL_STREAM_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    glGenBuffers(2, m_DownloadPboIds);
+    glGenBuffers(2, m_DownloadPboIds); // 创建2个PBO,可以读出数据，乒乓操作
     glBindBuffer(GL_PIXEL_PACK_BUFFER, m_DownloadPboIds[0]);
     glBufferData(GL_PIXEL_PACK_BUFFER, imgByteSize, 0, GL_STREAM_READ);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, m_DownloadPboIds[1]);
@@ -397,6 +398,7 @@ void PBOSample::UpdateMVPMatrix(glm::mat4 &mvpMatrix, int angleX, int angleY, fl
 }
 
 void PBOSample::UploadPixels() {
+	// 修改图像并更新修改后图像到纹理
     LOGCATE("PBOSample::UploadPixels");
 	int dataSize = m_RenderImage.width * m_RenderImage.height * 4;
 
@@ -452,9 +454,10 @@ void PBOSample::UploadPixels() {
 
 }
 
+static int xxx = 0;
 void PBOSample::DownloadPixels() {
     int dataSize = m_RenderImage.width * m_RenderImage.height * 4;
-	NativeImage nativeImage = m_RenderImage;
+	NativeImage nativeImage = m_RenderImage; //复制构造
 	nativeImage.format = IMAGE_FORMAT_RGBA;
 
 
@@ -470,22 +473,29 @@ void PBOSample::DownloadPixels() {
     int nextIndex = (index + 1) % 2;
 
     BEGIN_TIME("DownloadPixels glReadPixels with PBO")
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, m_DownloadPboIds[index]);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, m_DownloadPboIds[index]); //绑定PBO后，glReadPixels将帧缓存中的数据读到当前绑定的PBO,GPU去写PBO
+    // If a non-zero named buffer object is bound to the GL_PIXEL_PACK_BUFFER target (see glBindBuffer) while a block of pixels is requested,
+    // data is treated as a byte offset into the buffer object's data store rather than a pointer to client memory.
     glReadPixels(0, 0, m_RenderImage.width, m_RenderImage.height, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     END_TIME("DownloadPixels glReadPixels with PBO")
 
     BEGIN_TIME("DownloadPixels PBO glMapBufferRange")
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, m_DownloadPboIds[nextIndex]);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, m_DownloadPboIds[nextIndex]); //绑定另外一个pbo，映射到内存，由cpu去读PBO,第一帧为黑，因为PBO没数据
     GLubyte *bufPtr = static_cast<GLubyte *>(glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0,
                                                            dataSize,
                                                            GL_MAP_READ_BIT));
-
+//
     if (bufPtr) {
-        nativeImage.ppPlane[0] = bufPtr;
-        //NativeImageUtil::DumpNativeImage(&nativeImage, "/sdcard/DCIM", "PBO");
-        glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+    	if((xxx++) == 10) {
+			LOGCATE("DumpNativeImage");
+			nativeImage.ppPlane[0] = bufPtr;
+			NativeImageUtil::DumpNativeImage(&nativeImage, "/storage/emulated/0/Android/data/com.byteflow.app/files", "PBO");
+		}
+	 glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
     }
     END_TIME("DownloadPixels PBO glMapBufferRange")
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    // While a non-zero buffer object is bound to the GL_PIXEL_PACK_BUFFER target, the following commands are affected: glGetCompressedTexImage, glGetTexImage, and glReadPixels.
+    // The pointer parameter is interpreted as an offset within the buffer object measured in basic machine units.
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0); //绑定GL_PIXEL_PACK_BUFFER为0，从Framebuffer里直接读
 
 }

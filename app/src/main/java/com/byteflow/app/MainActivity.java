@@ -261,7 +261,7 @@ public class MainActivity extends AppCompatActivity implements AudioCollector.Ca
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
             case Sensor.TYPE_GRAVITY:
-                Log.d(TAG, "onSensorChanged() called with TYPE_GRAVITY: [x,y,z] = [" + event.values[0] + ", " + event.values[1] + ", " + event.values[2] + "]");
+                //Log.d(TAG, "onSensorChanged() called with TYPE_GRAVITY: [x,y,z] = [" + event.values[0] + ", " + event.values[1] + ", " + event.values[2] + "]");
                 if(mSampleSelectedIndex + SAMPLE_TYPE == SAMPLE_TYPE_KEY_AVATAR)
                 {
                     mGLRender.setGravityXY(event.values[0], event.values[1]);

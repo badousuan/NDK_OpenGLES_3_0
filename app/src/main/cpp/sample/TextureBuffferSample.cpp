@@ -182,7 +182,7 @@ void TextureBufferSample::Draw(int screenW, int screenH)
 	glUniformMatrix4fv(m_MVPMatLoc, 1, GL_FALSE, &m_MVPMatrix[0][0]);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_BUFFER, m_TboTexId);
+//	glBindTexture(GL_TEXTURE_BUFFER, m_TboTexId);
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, m_TboId);
     GLUtils::setInt(m_ProgramObj, "u_buffer_tex", 0);
 
